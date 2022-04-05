@@ -7,6 +7,7 @@ editor_options:
   chunk_output_type: console
 ---
 
+# loading the required packages to be used
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -16,6 +17,7 @@ library(WDI)
 
 # searching for the data 
 ```{r}
+# this is used to search for indicators to be used.
 WDIsearch("population") %>% 
   View()
 ```
@@ -25,56 +27,26 @@ WDIsearch("population") %>%
 
 # loading map data
 ```{r}
+# Loading the required packages to deal with world map data
 library(fuzzyjoin)
 library(ggthemes)
 
+# loading the world map data by filtering out unwanted Antarctic data
 world_data<- map_data("world") %>% 
   as_tibble() %>% 
   regex_left_join(maps::iso3166 %>%
                     select(mapname, country_code = a2), c(region = "mapname")) %>% 
   filter(region != "Antarctica")
 
-# 
-# # lat and long for adding to map
-# world_data %>% 
-#   filter(region %in% c("Rwanda", "Burundi", "Kenya", "Uganda", "Tanzania", "South Sudan")) %>% 
-#   ggplot()+
-#   geom_polygon(aes(long,lat, group = group), fill = "yellow", color = "red")+
-#   theme_map()+
-#   geom_point(data = data, aes(x=long,y=lat,size = pop))
-
-# 
-# data = tibble(
-#   country = c("Rwanda", "Burundi", "Tanzania", "Kenya", "Uganda", "South Sudan"),
-#   population = c(12,14,34,35,42,28)
-# )
-
-
-# final  = world_data %>% 
-#   filter(region %in% c("Rwanda", "Burundi", "Kenya", "Uganda", "Tanzania", "South Sudan")) %>% 
-#   group_by(mapname) %>% 
-#   mutate(lat_m = mean(lat),
-#          long_m = mean(long)) %>% 
-#   left_join(data, by = c("region" = "country"))
-
-
-# # final plot
-# 
-# final %>% 
-#   ggplot()+
-#   geom_polygon(aes(long, lat, group = group, fill = region), color = "red")+
-#   geom_point(aes(x = long_m, y = lat_m, size = population), color = "yellow")+
-#   theme_map()+
-#   geom_label(aes(x = long_m, y = lat_m,label = region), hjust = 1.22)
-  
 ```
 
 
 #loading the data of interest (EAC countries related data)
 ```{r}
-# rwanda data
+# loading the targeted dataset
 eac_data = WDI(country = c("RW", "KE", "BDI", "UG", "TZ","SS","CD"), indicator = "SP.POP.TOTL", start = 2020, end = 2020)
 
+# renaming the population column
 eac_data = eac_data %>% 
   rename(population = `SP.POP.TOTL`)
 
@@ -96,6 +68,7 @@ final %>%
   geom_polygon(aes(long, lat, group = group, fill = mapname))+
   theme_map()+
   geom_point(aes(x = long_m, y = lat_m, size = population))+
+  # adding labels to the map
   geom_label(aes(x = long_m, y = lat_m,label = paste0(region,", ", round(population/1000000,2)), hjust = 1.2, fill = mapname))+
   labs(
     title = "Guess How big is the EAC market with addition of the DRC?",
@@ -109,24 +82,3 @@ final %>%
     plot.title = element_text(size = 22)
   )
 ```
-
-
-# Test on how to use map data and bubbles chart
-```{r}
-# uk = map_data("world") %>% 
-#   filter(region == "Rwanda")
-# 
-# # data to be mapped
-# 
-# data = maps::world.cities %>% 
-#   filter(country.etc =="Rwanda")
-# 
-# # creating uk map
-# 
-# uk %>% 
-#   ggplot()+
-#   geom_polygon(aes(x = long,y = lat, group = group))+
-#   geom_point(data = data, aes(x = long, y = lat,size = pop, color=name ))
-
-```
-
