@@ -1,0 +1,96 @@
+---
+title: "learning to plot data from shapefiles shp"
+author: "birasafab"
+date: "4/5/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# loading the required packages to be used
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# package for reading shp files
+
+library(rgdal)
+```
+
+# downloading the dataset of interest
+```{r}
+# the following code should work, but for me it didn't due to permission denied error, therefore I downloaded it manually.
+download.file("http://thematicmapping.org/downloads/TM_BORDERS_SIMPL-0.3.zip", destfile = "C:/Users/fabrice.birasa/Documents/My files/Learning/R learning/30-Day-chart-challenge")
+
+
+# unzipping the downloaded data
+unzip("TM_WORLD_BORDERS_SIMPL-0.3.zip")
+
+# Read this shape file with the rgdal package
+
+my_spdf <- readOGR(
+  dsn = getwd(),
+  layer = "TM_WORLD_BORDERS_SIMPL-0.3",
+  verbose = FALSE
+)
+```
+
+# plot it with base R
+```{r}
+# Basic plot of this shape file:
+par(mar=c(0,0,0,0))
+plot(my_spdf, col="#f2f2f2", bg="skyblue", lwd=0.25, border=0 )
+```
+
+
+
+
+# reading my own dataset
+```{r}
+# changing the directory to the location of the dataset of interest
+
+setwd("C:/Users/fabrice.birasa/Documents/urgent documents/Border Projects 2020/NCP related documents/Northern Districts maps and entities shapefiles/later maps/ADMINISTRATIVE BOUNDARIES/District_Boundary_2012")
+
+# loading in the required dataset
+my_spdf <- readOGR(
+  dsn = getwd(),
+  layer = "District_Boundary_2012",
+  verbose = FALSE
+)
+
+```
+
+
+# Ploting the district data
+```{r}
+
+# the following codes seem not to be working
+
+# library(broom)
+# 
+# spdf_fortified <- tidy(my_spdf, region = "NAME")
+
+library(ggthemes)
+library(tidyverse)
+district = ggplot2::fortify(my_spdf)
+
+district %>%
+  group_by(id) %>% 
+  mutate(long_m = mean(long),
+         lat_m = mean(lat),
+         id_m = as.numeric(id)+1) %>% 
+  ggplot2::ggplot()+
+  geom_polygon(aes(long,lat, group = group), fill = "lightblue", color = "red")+
+  theme_light()+
+  geom_text(aes(long_m, lat_m, label = id_m))+
+  theme_map()+
+  labs(
+    title = "Guess which District correspond to which number??",
+    subtitle = "Map of Rwanda sub-divided into 30 districts",
+    caption = "Plot by Birasafab | #30DayChartChallenge"
+  )+
+  theme(
+    plot.title = element_text(size = 20),
+    plot.subtitle = element_text(size = 15),
+    plot.caption = element_text(size = 12)
+  )
+    
+```
