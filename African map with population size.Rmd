@@ -1,0 +1,89 @@
+---
+title: "African continent population"
+author: "birasafab"
+date: "4/8/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# loading the required packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(countrycode)
+library(WDI)
+```
+
+# loading data from `WDI` package
+```{r}
+population = WDI(indicator = "SP.POP.TOTL") %>% 
+  filter(year == 2020)
+
+
+# mapping the world with ggplot
+map_data("world") %>% 
+  ggplot(aes(long,lat, group = group))+
+  geom_polygon(color = "red")
+```
+
+# data wrangle
+```{r}
+# adding continent column
+population_new = population %>% 
+  tibble() %>% 
+  mutate(continent = countrycode(iso2c,origin = "iso2c", destination = "continent" )) %>% 
+  filter(!is.na(continent)) %>% 
+  # rename the population column
+  rename(population  = SP.POP.TOTL )
+
+  
+# adding continent column in the map_data
+
+World_data_continent =   map_data("world") %>%
+    tibble() %>% 
+    mutate(continent = countrycode(region,origin = "country.name", destination = "continent" ),
+           iso2c = countrycode(region,origin = "country.name", destination = "iso2c" )) %>% 
+    filter(!is.na(continent))
+    
+```
+
+# Combining world map data with population data
+```{r}
+final_data  = World_data_continent %>% 
+  left_join(population,by = c("iso2c" = "iso2c" )) %>% 
+  group_by(region) %>% 
+  mutate(lat_m = mean(lat),
+         long_m = mean(long)) %>% 
+  rename(population = SP.POP.TOTL) %>% 
+  filter(continent == "Africa") %>% 
+  ungroup()
+```
+
+
+# mapping with final (combined) data
+```{r}
+# loading the ggthemes for nice maps 
+library(ggthemes)
+library(scales)
+
+final_data %>% 
+  ggplot()+
+  geom_polygon(aes(long,lat, group = group, fill = population),color = "red")+
+  theme_map()+
+  scale_fill_viridis_c(option = "plasma", labels = scales::label_comma())+
+  labs(
+    title = "Population Size in African Countries as of 2020",
+    subtitle = "Only Nigeria has above 200 million population \nfollowed with Ethiopia having almost 115 million while Egypt had 102 million.\nThe rest of African countries had less than 100 million population.",
+    fill = "Population size",
+    caption = "Plot by Birasafab | #30DayChartChallenge"
+  )+
+  theme(
+    panel.background = element_rect(fill = "lightblue"),
+    legend.background = element_blank(),
+    plot.background = element_rect(fill = "#eab676"),
+    plot.title = element_text(size = 15)
+  )
+```
+
