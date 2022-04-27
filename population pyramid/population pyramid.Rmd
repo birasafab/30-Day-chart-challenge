@@ -1,0 +1,82 @@
+---
+title: "population pyramid"
+author: "birasafab"
+date: "4/27/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#loading the required packages
+library(tidyverse)
+library(wpp2019)
+
+# loading the required dataset
+data(popF)
+data(popM)
+```
+
+# data wrangling for Rwanda population pyramid
+```{r}
+
+# subset for female age population
+popf = popF %>% 
+  filter(name == "Rwanda") %>% 
+  select(-country_code, -name) %>% 
+  tibble() %>% 
+  pivot_longer(cols = -age, names_to = "year", values_to = "pop") %>% 
+  add_column(gender = "women")
+
+# subset for male age population
+popm = popM %>% 
+  filter(name == "Rwanda") %>% 
+  select(-country_code, -name) %>% 
+  tibble() %>% 
+  pivot_longer(cols = -age, names_to = "year", values_to = "pop") %>% 
+  add_column(gender = "men")
+
+
+# merging the above two dataset
+
+Rwandan_pop = bind_rows(popm,popf) %>% 
+  mutate(pop_gend = ifelse(gender =="women",1,-1)*pop,
+         age_group = factor(age,levels = unique(age)))
+```
+
+# visualizing the newly created dataset
+```{r}
+
+Rwandan_pop %>% 
+  filter(year == 2020) %>% 
+  ggplot()+
+  aes(x = age_group,y = pop_gend, fill = gender)+
+  coord_flip()+
+  geom_bar(stat = "identity")+
+   scale_y_continuous(breaks=seq(-1000, 1000, 200),
+                      labels =c('1 Million','800 K','600 K','400 K','200 K','0','200 K','400 K','600 K', '800 K','1 Million')) +
+  labs(
+    x = "Age group",
+    y = "Population in Thousands",
+    title = "RWANDAN POPULATION 2020",
+    fill = "Gender",
+    subtitle = "Rwandan Population distributed by Age group as of 2020.\nBig part of Rwandan population is still young (between 0 and 40 years).",
+    caption = "Plot by Birasafab | source: World Population Prospects 2019 | inspired by: Corina"
+  )+
+  theme_light()+
+  theme(
+    panel.background = element_rect(fill = "black"),
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(fill = "#95dee5"),
+    legend.background = element_rect(fill = "black"),
+    legend.text = element_text(color = "white", face = "bold"),
+    legend.title = element_text(colour = "white", face = "bold"),
+    axis.text = element_text(color = "black", face = "bold", size = 9.10),
+    axis.title = element_text(color = "black", face = "bold"),
+    plot.title = element_text(size = 15, face = "bold")
+  )
+
+ggsave(filename = "rwandan population pyramid.png", device = "png")
+```
